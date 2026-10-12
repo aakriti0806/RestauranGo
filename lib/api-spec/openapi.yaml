@@ -1,0 +1,361 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: menu
+    description: Menu discovery
+  - name: orders
+    description: Ordering and tracking
+  - name: reservations
+    description: Table reservations
+  - name: dashboard
+    description: Staff dashboard summaries
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /menu:
+    get:
+      operationId: listMenu
+      tags: [menu]
+      summary: List available menu items
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: dietaryTag
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Menu catalog
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MenuItem"
+  /menu/featured:
+    get:
+      operationId: getFeaturedMenu
+      tags: [menu]
+      summary: Get featured menu items
+      responses:
+        "200":
+          description: Featured menu items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MenuItem"
+  /orders:
+    get:
+      operationId: listOrders
+      tags: [orders]
+      summary: List recent orders
+      parameters:
+        - name: customerId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+    post:
+      operationId: createOrder
+      tags: [orders]
+      summary: Place an order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderInput"
+      responses:
+        "201":
+          description: Created order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+  /orders/{id}:
+    get:
+      operationId: getOrder
+      tags: [orders]
+      summary: Get an order and its live status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "404":
+          description: Order not found
+  /orders/{id}/status:
+    patch:
+      operationId: updateOrderStatus
+      tags: [orders]
+      summary: Update order status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderStatusUpdate"
+      responses:
+        "200":
+          description: Updated order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+  /reservations:
+    get:
+      operationId: listReservations
+      tags: [reservations]
+      summary: List reservations
+      responses:
+        "200":
+          description: Reservations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Reservation"
+    post:
+      operationId: createReservation
+      tags: [reservations]
+      summary: Reserve a table
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReservationInput"
+      responses:
+        "201":
+          description: Created reservation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reservation"
+  /reservations/availability:
+    get:
+      operationId: getReservationAvailability
+      tags: [reservations]
+      summary: Check available reservation times
+      parameters:
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: partySize
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Available time slots
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReservationAvailability"
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get staff dashboard summary
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    MenuItem:
+      type: object
+      required: [id, name, category, description, price, imageUrl, calories, allergens, dietaryTags, isAvailable, featured]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        category: { type: string }
+        description: { type: string }
+        price: { type: number, format: float }
+        imageUrl: { type: string }
+        calories: { type: integer }
+        allergens:
+          type: array
+          items: { type: string }
+        dietaryTags:
+          type: array
+          items: { type: string }
+        isAvailable: { type: boolean }
+        featured: { type: boolean }
+    OrderItem:
+      type: object
+      required: [menuItemId, name, quantity, itemPrice]
+      properties:
+        menuItemId: { type: string }
+        name: { type: string }
+        quantity: { type: integer }
+        itemPrice: { type: number, format: float }
+        customizations: { type: string }
+    Order:
+      type: object
+      required: [id, customerName, orderType, status, totalAmount, items, createdAt, estimatedReadyAt]
+      properties:
+        id: { type: string }
+        customerName: { type: string }
+        orderType:
+          type: string
+          enum: [pickup, delivery]
+        status:
+          type: string
+          enum: [placed, confirmed, preparing, ready, out_for_delivery, completed]
+        totalAmount: { type: number, format: float }
+        address: { type: ["string", "null"] }
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItem"
+        createdAt: { type: string, format: date-time }
+        estimatedReadyAt: { type: string, format: date-time }
+    OrderInput:
+      type: object
+      required: [customerName, orderType, items]
+      properties:
+        customerName: { type: string, minLength: 1 }
+        orderType:
+          type: string
+          enum: [pickup, delivery]
+        address: { type: string }
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/OrderItemInput"
+    OrderItemInput:
+      type: object
+      required: [menuItemId, quantity]
+      properties:
+        menuItemId: { type: string }
+        quantity: { type: integer, minimum: 1 }
+        customizations: { type: string }
+    OrderStatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [placed, confirmed, preparing, ready, out_for_delivery, completed]
+    Reservation:
+      type: object
+      required: [id, guestName, date, time, partySize, status, tableLabel]
+      properties:
+        id: { type: string }
+        guestName: { type: string }
+        date: { type: string, format: date }
+        time: { type: string }
+        partySize: { type: integer }
+        status:
+          type: string
+          enum: [pending, confirmed, cancelled]
+        tableLabel: { type: string }
+    ReservationInput:
+      type: object
+      required: [guestName, date, time, partySize]
+      properties:
+        guestName: { type: string, minLength: 1 }
+        date: { type: string, format: date }
+        time: { type: string }
+        partySize: { type: integer, minimum: 1, maximum: 12 }
+    ReservationAvailability:
+      type: object
+      required: [date, partySize, slots]
+      properties:
+        date: { type: string, format: date }
+        partySize: { type: integer }
+        slots:
+          type: array
+          items: { type: string }
+    DashboardSummary:
+      type: object
+      required: [todayRevenue, openOrders, reservationsToday, popularItems, statusBreakdown]
+      properties:
+        todayRevenue: { type: number, format: float }
+        openOrders: { type: integer }
+        reservationsToday: { type: integer }
+        popularItems:
+          type: array
+          items:
+            type: object
+            required: [name, orders]
+            properties:
+              name: { type: string }
+              orders: { type: integer }
+        statusBreakdown:
+          type: array
+          items:
+            type: object
+            required: [status, count]
+            properties:
+              status: { type: string }
+              count: { type: integer }
+

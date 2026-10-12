@@ -1,0 +1,62 @@
+# compiled output
+dist
+build
+tmp
+out-tsc
+*.tsbuildinfo
+.expo
+.expo-shared
+
+# dependencies
+node_modules
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# misc
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
+npm-debug.log
+pnpm-debug.log*
+yarn-error.log
+testem.log
+/typings
+*.log
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# Vercel
+.vercel
+
+# Replit
+.cache/
+.local/
+.replit
+replit.nix
+replit.md
+.replitignore
+.upm/
+.agents/
+attached_assets/
+
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
